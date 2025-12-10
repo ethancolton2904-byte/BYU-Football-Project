@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BYU Snake — Play</title>
+  <style>
+    :root{
+      --royal:#4169e1;
+      --accent:#002d72;
+      --bg:#f5f7fb;
+      --card:#fff;
+      --muted:#666;
+    }
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#111}
+    .wrap{max-width:960px;margin:28px auto;padding:18px;background:var(--card);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+    header{display:flex;align-items:center;gap:16px}
+    header h1{margin:0;color:var(--accent);font-size:1.3rem}
+    .controls{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+    .control-group{display:flex;gap:8px;align-items:center}
+    label{font-size:.95rem;color:var(--muted)}
+    input[type=range]{width:160px}
+    button{background:var(--royal);color:white;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#eee;color:#111}
+    .status{margin-left:auto;text-align:right}
+    canvas{display:block;margin:18px auto;border-radius:8px;background:linear-gradient(180deg,#fff,#f3f6ff);box-shadow:inset 0 1px 0 rgba(255,255,255,0.6)}
+    .info{display:flex;gap:18px;align-items:center;margin-top:8px}
+    .note{color:var(--muted);font-size:.95rem}
+    @media(max-width:520px){
+      .controls{flex-direction:column;align-items:flex-start}
+      input[type=range]{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>BYU Passing Game — Catch the Passes</h1>
+      <div class="status">
+        <div><strong>Score:</strong> <span id="score">0</span></div>
+        <div id="message" class="note">Use arrow keys or WASD to move the receiver</div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <div class="control-group">
+        <button id="startBtn">Start</button>
+        <button id="pauseBtn" class="secondary">Pause</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+
+      <div class="control-group">
+        <label for="speed">Throw frequency</label>
+        <input id="speed" type="range" min="1" max="10" value="5">
+        <span id="speedVal">5</span>
+      </div>
+
+      <div class="control-group">
+        <label for="power">Pass power</label>
+        <input id="power" type="range" min="1" max="10" value="5">
+        <span id="powerVal">5</span>
+      </div>
+
+      <div class="control-group note">Controls: Arrow keys or WASD. Collide with wall = Game Over.</div>
+    </div>
+
+    <canvas id="game" width="720" height="480" role="img" aria-label="BYU Snake game"></canvas>
+
+    <div class="info">
+      <div class="note">Control the receiver (labelled BYU). Quarterback on the left throws footballs (🏈). Catch as many as you can.</div>
+      <div class="note">Adjust throw frequency and pass power while playing. Score increases per catch.</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const scoreEl = document.getElementById('score');
+  const freqInput = document.getElementById('speed');
+  const freqVal = document.getElementById('speedVal');
+  const powerInput = document.getElementById('power');
+  const powerVal = document.getElementById('powerVal');
+  const message = document.getElementById('message');
+
+  let running = false;
+  let animationId = null;
+  let spawnTimer = null;
+  let score = 0;
+  let catches = 0;
+  const qb = { x: 60, y: canvas.height/2 };
+  const receiver = { x: canvas.width/2, y: canvas.height*0.75, w: 48, h: 28, speed: 5 };
+  let keys = {};
+  const balls = [];
+
+  function reset(){
+    balls.length = 0;
+    score = 0; catches = 0;
+    receiver.x = canvas.width/2; receiver.y = canvas.height*0.75;
+    updateScore();
+    message.textContent = 'Ready — press Start';
+    stopSpawn();
+    cancelAnimationFrame(animationId);
+    running = false;
+    draw();
+  }
+
+  function start(){
+    if(running) return;
+    running = true;
+    message.textContent = 'Playing — catch the passes!';
+    startSpawn();
+    loop();
+  }
+
+  function pause(){
+    if(!running) return;
+    running = false;
+    message.textContent = 'Paused';
+    stopSpawn();
+    cancelAnimationFrame(animationId);
+  }
+
+  function startSpawn(){
+    stopSpawn();
+    const freq = parseInt(freqInput.value,10);
+    freqVal.textContent = freq;
+    // map 1..10 to interval 1500..300ms
+    const interval = Math.round(1500 - (freq-1)*(120));
+    spawnTimer = setInterval(spawnBall, interval);
+  }
+
+  function stopSpawn(){ if(spawnTimer){ clearInterval(spawnTimer); spawnTimer=null; }}
+
+  function spawnBall(){
+    // create a pass from QB with upward velocity depending on power
+    const power = parseInt(powerInput.value,10);
+    powerVal.textContent = power;
+    const baseVx = 2 + power * 0.8; // horizontal speed
+    const baseVy = -6 - power * 0.4; // initial upward
+    const ball = { x: qb.x + 20, y: qb.y, vx: baseVx + Math.random()*1.5, vy: baseVy + (Math.random()-0.5)*2, r: Math.max(10, Math.floor(16 * (power/6))) };
+    balls.push(ball);
+  }
+
+  function loop(){
+    update();
+    draw();
+    if(running) animationId = requestAnimationFrame(loop);
+  }
+
+  function update(){
+    // handle receiver movement
+    const sp = receiver.speed;
+    if(keys.ArrowUp || keys.w) receiver.y -= sp;
+    if(keys.ArrowDown || keys.s) receiver.y += sp;
+    if(keys.ArrowLeft || keys.a) receiver.x -= sp;
+    if(keys.ArrowRight || keys.d) receiver.x += sp;
+    // bounds
+    receiver.x = Math.max(0, Math.min(canvas.width - receiver.w, receiver.x));
+    receiver.y = Math.max(0, Math.min(canvas.height - receiver.h, receiver.y));
+
+    // update balls
+    for(let i=balls.length-1;i>=0;i--){
+      const b = balls[i];
+      // gravity
+      b.vy += 0.28;
+      b.x += b.vx;
+      b.y += b.vy;
+
+      // check catch (circle vs rect)
+      if(circleRectCollision(b.x, b.y, b.r, receiver.x, receiver.y, receiver.w, receiver.h)){
+        balls.splice(i,1);
+        score += 1; catches += 1; updateScore();
+        continue;
+      }
+
+      // remove if off-screen (past bottom or right)
+      if(b.x - b.r > canvas.width || b.y - b.r > canvas.height){
+        balls.splice(i,1);
+      }
+    }
+  }
+
+  function updateScore(){ scoreEl.textContent = score; }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // field background
+    ctx.fillStyle = '#e9f0ff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // draw QB
+    ctx.fillStyle = '#4169e1';
+    roundRect(ctx, qb.x-18, qb.y-30, 36, 60, 10, true, false);
+    ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('QB', qb.x, qb.y);
+
+    // draw receiver
+    ctx.fillStyle = '#2b4aa1';
+    roundRect(ctx, receiver.x, receiver.y, receiver.w, receiver.h, 6, true, false);
+    ctx.fillStyle = '#fff'; ctx.font = '16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('BYU', receiver.x + receiver.w/2, receiver.y + receiver.h/2);
+
+    // draw balls
+    ctx.font = '20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(const b of balls){ ctx.fillText('🏈', b.x, b.y); }
+
+    // score display bottom-left
+    ctx.fillStyle = '#002d72'; ctx.font = '14px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('Catches: ' + catches, 10, canvas.height - 10);
+  }
+
+  function circleRectCollision(cx, cy, r, rx, ry, rw, rh){
+    // find closest point to circle within rect
+    const closestX = Math.max(rx, Math.min(cx, rx+rw));
+    const closestY = Math.max(ry, Math.min(cy, ry+rh));
+    const dx = cx - closestX;
+    const dy = cy - closestY;
+    return (dx*dx + dy*dy) <= (r*r);
+  }
+
+  // draw rounded rectangle helper (reuse)
+  function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    if (typeof stroke === 'undefined') { stroke = true; }
+    if (typeof radius === 'undefined') { radius = 5; }
+    if (typeof radius === 'number') { radius = {tl: radius, tr: radius, br: radius, bl: radius}; }
+    ctx.beginPath();
+    ctx.moveTo(x + radius.tl, y);
+    ctx.lineTo(x + width - radius.tr, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+    ctx.lineTo(x + width, y + height - radius.br);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+    ctx.lineTo(x + radius.bl, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+    ctx.lineTo(x, y + radius.tl);
+    ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  // input
+  window.addEventListener('keydown', e => { keys[e.key] = true; if(!running) start(); });
+  window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+  // controls
+  startBtn.addEventListener('click', () => start());
+  pauseBtn.addEventListener('click', () => { if(running) pause(); else start(); });
+  resetBtn.addEventListener('click', () => { reset(); });
+  freqInput.addEventListener('input', () => { freqVal.textContent = freqInput.value; if(running) startSpawn(); });
+  powerInput.addEventListener('input', () => { powerVal.textContent = powerInput.value; });
+
+  // initial
+  reset();
+
+})();
+</script>
+</body>
+</html>

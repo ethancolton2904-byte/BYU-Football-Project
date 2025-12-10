@@ -1,0 +1,86 @@
+/* Global layout */
+body {
+    background-color: royalblue;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: white;
+}
+
+main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* Header */
+h1 {
+    font-family: 'Times New Roman', serif;
+    margin-top: 20px;
+    color: white;
+}
+
+/* Navigation */
+nav a {
+    color: white;
+    margin: 0 10px;
+    text-decoration: underline;
+    font-size: 18px;
+}
+
+/* Hero image */
+.hurdle {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Layout grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+    margin-top: 40px;
+}
+
+/* Left sidebar */
+.left {
+    background-color: whitesmoke;
+    color: royalblue;
+    text-align: left;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid black;
+}
+
+/* Main text box */
+.main {
+    background-color: whitesmoke;
+    color: royalblue;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid black;
+}
+
+/* Video box */
+.youtube iframe {
+    width: 100%;
+    height: 350px;
+    border-radius: 8px;
+    border: none;
+}
+
+/* Tableau embed container */
+.tableau-container {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+}
+
+/* External iframe (BYU website) */
+#BYUwebpage {
+    margin-top: 60px;
+    width: 100%;
+    height: 700px;
+    border: none;
+}

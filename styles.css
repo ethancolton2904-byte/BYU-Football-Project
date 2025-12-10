@@ -1,0 +1,89 @@
+/* Extracted styles for Project.html */
+:root {
+    --royal-blue: #4169e1; /* royal blue */
+    --card-bg: rgba(255,255,255,0.95);
+    --accent: #002d72;
+}
+html,body {
+    height:100%;
+    margin:0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background-color: var(--royal-blue);
+    color:#111;
+    -webkit-font-smoothing:antialiased;
+}
+.wrap {
+    max-width:1000px;
+    margin:32px auto;
+    padding:22px;
+    background:var(--card-bg);
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.18);
+}
+header h1 {
+    margin:0 0 8px 0;
+    color:var(--accent);
+}
+.toplinks {
+    margin-bottom:18px;
+}
+img.team-photo {
+    max-width:100%;
+    height:auto;
+    display:block;
+    border-radius:8px;
+    margin:12px 0;
+    border:1px solid rgba(0,0,0,0.06);
+}
+.media {
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+}
+.video, .tableau {
+    flex:1 1 320px;
+    min-width:280px;
+}
+iframe {
+    width:100%;
+    height:360px;
+    border:0;
+    border-radius:8px;
+}
+.section {
+    margin-top:18px;
+}
+/* Decorative full-width divider sections */
+.divider {
+    margin:28px -22px; /* extend to the edges of the white card area */
+    padding:22px 22px;
+    border-radius:8px;
+    background: linear-gradient(90deg, rgba(0,45,114,0.06), rgba(65,105,225,0.06));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    color:var(--accent);
+    text-align:center;
+}
+.divider h2 {
+    margin:0;
+    font-size:1.05rem;
+    letter-spacing:0.2px;
+}
+/* Slightly stronger divider variant for emphasis */
+.divider.strong {
+    background: linear-gradient(90deg, rgba(0,45,114,0.12), rgba(65,105,225,0.08));
+}
+ol { margin-left:20px; }
+ul { margin-top:6px; margin-bottom:6px; }
+footer { margin-top:22px; font-size:0.9rem; color:#333; }
+
+/* Moved inline styles */
+figure figcaption { font-size:.9rem; color:#444; margin-top:6px; }
+.video p, .tableau p { font-size:.9rem; color:#444; margin-top:6px; }
+.footer-links { margin-top:8px; }
+
+@media (max-width:600px){
+    iframe { height:240px; }
+}
